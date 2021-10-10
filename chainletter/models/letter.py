@@ -1,5 +1,5 @@
 from sqlalchemy import Column, ForeignKey, Integer, Text, Boolean, CheckConstraint
-from sqlalchemy.orm import validates, relationship
+from sqlalchemy.orm import validates, relationship, backref
 
 from . import db
 
@@ -20,7 +20,9 @@ class Letter(db.Model):
     flagged = Column(Boolean)
     reviewed = Column(Boolean)
 
-    hashchain = relationship("HashChain", backref="letter", foreign_keys=hashchain_id)
+    hc = relationship(
+        "HashChain", backref=backref("letter", uselist=False), foreign_keys=hashchain_id
+    )
     veteran = relationship("HashChain", foreign_keys=veteran_id)
 
     def __init__(

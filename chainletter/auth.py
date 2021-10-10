@@ -29,7 +29,7 @@ def login():
         else:
             session.clear()
             session["user_id"] = hc.id
-            return redirect(url_for("chainlink.link", sha256=sha256))
+            return redirect(url_for("chainlink.view", sha256=sha256))
 
     return render_template("auth/login.html")
 

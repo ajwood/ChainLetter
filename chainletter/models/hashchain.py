@@ -1,9 +1,12 @@
 import hashlib
 import random
 import re
+import os
 
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String, func
 from sqlalchemy.orm import validates, relationship
+
+from chainletter.models.letter import Letter
 
 from . import db
 
@@ -38,22 +41,46 @@ class HashChain(db.Model):
         """Number of children nodes"""
         return len(self.children)
 
+    @property
+    def depth(self):
+        """Number of links between us an our root node"""
+        raise Exception("TODO")
+
     @staticmethod
     def make_root():
         """
-        Make a chain root node (i.e. parent_id=NULL and a random sha256)
+        Make a chain root node:
+            * parent_id=NULL
+            * a random sha256 by default, else if the CHAINLETTER_DEV_MODE
+            environment variable is set `"0" * 64`.
         """
-        rand_hash = "{:064x}".format(random.getrandbits(256))
+        if os.environ.get("CHAINLETTER_DEV_MODE", False):
+            rand_hash = "0" * 64
+        else:
+            rand_hash = "{:064x}".format(random.getrandbits(256))
+
         return HashChain(parent_id=None, sha256=rand_hash, is_root=True)
 
     def make_child(self):
-        """Make a new child instance"""
+        """
+        Make a new child instance.
+
+        TODO: finalize the hashing policy and describe here; it needs to include
+        a secret to prevent users from being able to predict hashes.
+        """
         if self.id is None:
             raise RuntimeError(
                 "Attempting to make child from a new instance that hasn't yet been assigned an id"
             )
-        val = f"{self.sha256}{self.nchildren}"
-        sha256 = hashlib.sha256(val.encode()).hexdigest()
+
+        if os.environ.get("CHAINLETTER_DEV_MODE", False):
+            maxhash = db.session.query(func.max(HashChain.sha256)).scalar()
+            print(maxhash)
+            maxhash = int(maxhash, base=16)
+            sha256 = "{:064x}".format(maxhash + 1)
+        else:
+            val = f"{self.sha256}{self.nchildren}"
+            sha256 = hashlib.sha256(val.encode()).hexdigest()
 
         # Add the new child to our list. I'm not totally sure whether it should
         # be our responsibility to do this, or leave it up to the caller to

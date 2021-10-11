@@ -1,6 +1,7 @@
 <!doctype html>
 <title>{% block title %}{% endblock %} - Chain Letter</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="https://unpkg.com/htmx.org@1.6.0"></script>
 <nav>
   <h1>
     {% if g.user %}

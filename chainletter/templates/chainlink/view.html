@@ -19,11 +19,31 @@
     <div style="white-space: pre">{{letter.message}}</div>
 
     <h4>Downstream Letters</h4>
-    {% for child in children %}
-    <a href="{{ url_for('chainlink.view', sha256=child) }}">
-        {{child}}
-    </a>
-    {% endfor %}
+    <div>
+        Create new hashes to share with people, and ask that they write a new letter
+        in the chain!
+    </div>
+    {# only render the button if we have a full hash #}
+    {% if sha256|length == 64 %}
+    <button
+        hx-post="/api/make_child/{{sha256}}"
+        hx-swap="beforeend"
+        hx-target="#ul-children"
+        >
+        Create new hash
+    </button>
+
+    {% endif %}
+    <ul id="ul-children" , style="list-style-type: none; padding: 0; font-family: monospace;">
+        {% for child in children %}
+        <li>
+            <a href="{{ url_for('chainlink.view', sha256=child) }}">
+                {{child}}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+
     {% endif %}
 </div>
 {% endblock %}

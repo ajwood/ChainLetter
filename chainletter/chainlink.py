@@ -73,6 +73,12 @@ def fill(sha256):
     """Fill a pending link"""
     hc = HashChain.query.filter_by(sha256=sha256).first_or_404()
     l = Letter.query.filter_by(hashchain_id=hc.id).one_or_none()
+
+    # Starting values for the page's inputs. This is mainly used for error
+    # handling, if a submission goes bad, the user doesn't lose their entered
+    # text (there is probably a better way to achieve this)
+    input_vals = {}
+
     if l is not None:
         # If the letter already exists, redirect to its view page
         flash("This hash is already filled!")
@@ -84,7 +90,7 @@ def fill(sha256):
         if not request.form["veteran-hash"]:
             v_id = None
         else:
-            v = HashChain.query.filter_by(sha256=sha256).one_or_none()
+            v = HashChain.query.filter_by(sha256=request.form["veteran-hash"]).one_or_none()
             if v is None:
                 error = "Your veteran hash could not be found in the system!"
             else:
@@ -93,6 +99,7 @@ def fill(sha256):
         # Report the error, or proceed with the new record
         if error:
             flash(error)
+            input_vals |= request.form
         else:
             l = Letter(
                 hc.id,
@@ -104,9 +111,20 @@ def fill(sha256):
             )
 
             db.session.add(l)
-            hc.make_child()
             db.session.commit()
 
             return redirect(url_for("chainlink.view", sha256=sha256))
 
-    return render_template("chainlink/fill.html", letter=hc.letter)
+    return render_template("chainlink/fill.html", letter=hc.letter, **input_vals)
+
+@bp.route("/api/make_child/<sha256>", methods=["POST"])
+def api_make_child(sha256):
+    """Create a new new child off the given hash"""
+
+    hc = HashChain.query.filter_by(sha256=sha256).first_or_404()
+    if hc.nchildren >= HashChain.MAX_DEGREE:
+        return "<li>you have maxed out the number of child hashes!</li>"
+    else:
+        newhash = hc.make_child().sha256
+        db.session.commit()
+        return f"<li><a href='/view/{newhash}'>{newhash}</a></li>"

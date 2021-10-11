@@ -10,13 +10,17 @@ from chainletter.models.letter import Letter
 
 from . import db
 
+
 class HashChain(db.Model):
     __tablename__ = "hashchain"
+
+    # Max number of allowed children
+    MAX_DEGREE = 5
 
     id = Column(Integer, primary_key=True)
     parent_id = Column(Integer, ForeignKey("hashchain.id"))
     sha256 = Column(String(64), unique=True)
-    birthday = Column(DateTime(timezone=True), server_default=func.now())
+    created_on = Column(DateTime(timezone=True), server_default=func.now())
 
     # Adapted from https://stackoverflow.com/a/20834316/512652
     _parent = relationship(lambda: HashChain, remote_side=id, backref="children")
@@ -84,6 +88,8 @@ class HashChain(db.Model):
             raise RuntimeError(
                 "Attempting to make child from a new instance that hasn't yet been assigned an id"
             )
+        elif self.nchildren >= self.MAX_DEGREE:
+            raise RuntimeError("Exceeded max number of children at this node")
 
         val = f"{self.sha256}{self.nchildren}"
         sha256 = hashlib.sha256(val.encode()).hexdigest()

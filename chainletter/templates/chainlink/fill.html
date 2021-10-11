@@ -9,18 +9,18 @@
 <form method="post">
     <label for="username">What is your name?</label>
     <span>e.g., "Andrew", "Andrew Wood", "whoever"</span>
-    <input name="username" id="username" value="andrew" required>
+    <input name="username" id="username" value="{{username}}" required>
 
     <label for="home">Where do you live?</label>
     <span>e.g., "Montreal", "Quebec", "Canada", "somewhere"</span>
-    <input name="home" id="home" value="montreal" required>
+    <input name="home" id="home" value="{{home}}" required>
 
     <label for="message">Add a message to the chain</label>
     <span>Write us a message, any message! Could be your life story, something
     that happened to you today, a funny joke, whatever. Your message will be
     added to the chain for everyone to read, so please be respectful, you never
     know who will end up reading this some day.</span>
-    <textarea name="message" id="message" required>This is my message!</textarea>
+    <textarea name="message" id="message" required>{{message}}</textarea>
 
     <label for="veteran-hash">Have you recorded a message here before?</label>
     <span>If you have, note your previous secret hash here (if you've done this

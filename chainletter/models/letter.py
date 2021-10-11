@@ -28,7 +28,7 @@ class Letter(db.Model):
     veteran_id = Column(Integer, ForeignKey("hashchain.id"), nullable=True)
     flagged = Column(Boolean)
     reviewed = Column(Boolean)
-    birthday = Column(DateTime(timezone=True), server_default=func.now())
+    created_on = Column(DateTime(timezone=True), server_default=func.now())
 
     hc = relationship(
         "HashChain", backref=backref("letter", uselist=False), foreign_keys=hashchain_id

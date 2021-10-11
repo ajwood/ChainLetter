@@ -3,7 +3,7 @@ import random
 import re
 import os
 
-from sqlalchemy import Column, ForeignKey, Integer, String, func
+from sqlalchemy import Column, ForeignKey, Integer, String, func, DateTime
 from sqlalchemy.orm import validates, relationship
 
 from chainletter.models.letter import Letter
@@ -16,9 +16,10 @@ class HashChain(db.Model):
     id = Column(Integer, primary_key=True)
     parent_id = Column(Integer, ForeignKey("hashchain.id"))
     sha256 = Column(String(64), unique=True)
+    birthday = Column(DateTime(timezone=True), server_default=func.now())
 
     # Adapted from https://stackoverflow.com/a/20834316/512652
-    parent = relationship(lambda: HashChain, remote_side=id, backref="children")
+    _parent = relationship(lambda: HashChain, remote_side=id, backref="children")
 
     def __init__(self, parent_id, sha256, is_root=False):
         """
@@ -37,6 +38,22 @@ class HashChain(db.Model):
         return f"HashChain({self.id}, {self.parent_id}, '{self.sha256[:6]}...')"
 
     @property
+    def parent(self):
+        """
+        The parent node. Reason we need this is to work around the root node
+        having None parent, this way we can make root parent itself.
+        """
+        return self._parent or self
+
+    @property
+    def shart256(self):
+        """
+        A short sha256, useful for exposing enough of the hash to access the
+        system, but not enough to fill a letter or make baby hashes.
+        """
+        return self.sha256[:12]
+
+    @property
     def nchildren(self):
         """Number of children nodes"""
         return len(self.children)
@@ -51,14 +68,9 @@ class HashChain(db.Model):
         """
         Make a chain root node:
             * parent_id=NULL
-            * a random sha256 by default, else if the CHAINLETTER_DEV_MODE
-            environment variable is set `"0" * 64`.
+            * a random sha256 by default
         """
-        if os.environ.get("CHAINLETTER_DEV_MODE", False):
-            rand_hash = "0" * 64
-        else:
-            rand_hash = "{:064x}".format(random.getrandbits(256))
-
+        rand_hash = "{:064x}".format(random.getrandbits(256))
         return HashChain(parent_id=None, sha256=rand_hash, is_root=True)
 
     def make_child(self):
@@ -73,14 +85,8 @@ class HashChain(db.Model):
                 "Attempting to make child from a new instance that hasn't yet been assigned an id"
             )
 
-        if os.environ.get("CHAINLETTER_DEV_MODE", False):
-            maxhash = db.session.query(func.max(HashChain.sha256)).scalar()
-            print(maxhash)
-            maxhash = int(maxhash, base=16)
-            sha256 = "{:064x}".format(maxhash + 1)
-        else:
-            val = f"{self.sha256}{self.nchildren}"
-            sha256 = hashlib.sha256(val.encode()).hexdigest()
+        val = f"{self.sha256}{self.nchildren}"
+        sha256 = hashlib.sha256(val.encode()).hexdigest()
 
         # Add the new child to our list. I'm not totally sure whether it should
         # be our responsibility to do this, or leave it up to the caller to

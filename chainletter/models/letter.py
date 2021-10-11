@@ -1,4 +1,13 @@
-from sqlalchemy import Column, ForeignKey, Integer, Text, Boolean, CheckConstraint
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Integer,
+    Text,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    func,
+)
 from sqlalchemy.orm import validates, relationship, backref
 
 from . import db
@@ -19,6 +28,7 @@ class Letter(db.Model):
     veteran_id = Column(Integer, ForeignKey("hashchain.id"), nullable=True)
     flagged = Column(Boolean)
     reviewed = Column(Boolean)
+    birthday = Column(DateTime(timezone=True), server_default=func.now())
 
     hc = relationship(
         "HashChain", backref=backref("letter", uselist=False), foreign_keys=hashchain_id

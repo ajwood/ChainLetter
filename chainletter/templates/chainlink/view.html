@@ -2,8 +2,8 @@
 
 {% block header %}
 <h1>{% block title %}Chain Letter{% endblock %}</h1>
-{% if hc.parent %}
-<a href="{{ url_for('chainlink.view', sha256=hc.parent.sha256) }}">parent</a>
+{% if parent != sha256 %}
+<a href="{{ url_for('chainlink.view', sha256=parent) }}">parent</a>
 {% endif %}
 {% endblock %}
 
@@ -11,17 +11,17 @@
 <div>
     <h3>{{ sha256 }}</h3>
 
-    {% if hc.letter is not none %}
+    {% if letter is not none %}
     <h4>Submitted by</h4>
-    <div>{{hc.letter.username}} from {{hc.letter.home_address}}</div>
+    <div>{{letter.username}} from {{letter.home_address}}</div>
 
     <h4>Message</h4>
-    <div style="white-space: pre">{{hc.letter.message}}</div>
+    <div style="white-space: pre">{{letter.message}}</div>
 
     <h4>Downstream Letters</h4>
-    {% for child in hc.children %}
-    <a href="{{ url_for('chainlink.view', sha256=child.sha256) }}">
-        {{child.sha256}}
+    {% for child in children %}
+    <a href="{{ url_for('chainlink.view', sha256=child) }}">
+        {{child}}
     </a>
     {% endfor %}
     {% endif %}

@@ -28,7 +28,7 @@ def login():
             flash("Unknown hash.")
         else:
             session.clear()
-            session["user_id"] = hc.id
+            session["sha256"] = hc.sha256
             return redirect(url_for("chainlink.view", sha256=sha256))
 
     return render_template("auth/login.html")
@@ -47,12 +47,16 @@ def login_required(view):
 
 @bp.before_app_request
 def load_logged_in_user():
-    user_id = session.get("user_id")
+    sha256 = session.get("sha256")
 
-    if user_id is None:
+    if sha256 is None:
         g.user = None
     else:
-        g.user = HashChain.query.filter_by(id=user_id).one()
+        hc = HashChain.query.filter_by(sha256=sha256).one_or_none()
+        if hc is None:
+            g.user = None
+        else:
+            g.user = hc.sha256
 
 
 @bp.route("/logout")

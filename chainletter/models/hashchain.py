@@ -20,12 +20,18 @@ class HashChain(db.Model):
     id = Column(Integer, primary_key=True)
     parent_id = Column(Integer, ForeignKey("hashchain.id"))
     sha256 = Column(String(64), unique=True)
+
     created_on = Column(DateTime(timezone=True), server_default=func.now())
+
+    # This feels a little dirty, would prefer to compute this by following the
+    # chain to the root, but I'd imagine eventually this could be expensive and
+    # require N separate queries.
+    depth = Column(Integer)
 
     # Adapted from https://stackoverflow.com/a/20834316/512652
     _parent = relationship(lambda: HashChain, remote_side=id, backref="children")
 
-    def __init__(self, parent_id, sha256, is_root=False):
+    def __init__(self, parent_id, sha256, depth, is_root=False):
         """
         An entry in the hash chain.
 
@@ -37,6 +43,7 @@ class HashChain(db.Model):
             raise ValueError("attempting parent_id=None, but is_root is False")
         self.parent_id = parent_id
         self.sha256 = sha256
+        self.depth=depth
 
     def __repr__(self):
         return f"HashChain({self.id}, {self.parent_id}, '{self.sha256[:6]}...')"
@@ -48,6 +55,11 @@ class HashChain(db.Model):
         having None parent, this way we can make root parent itself.
         """
         return self._parent or self
+
+    @property
+    def is_root(self):
+        """Boolean indicating whether we're a root node"""
+        return self.parent_id is None
 
     @property
     def shart256(self):
@@ -62,11 +74,6 @@ class HashChain(db.Model):
         """Number of children nodes"""
         return len(self.children)
 
-    @property
-    def depth(self):
-        """Number of links between us an our root node"""
-        raise Exception("TODO")
-
     @staticmethod
     def make_root():
         """
@@ -75,7 +82,7 @@ class HashChain(db.Model):
             * a random sha256 by default
         """
         rand_hash = "{:064x}".format(random.getrandbits(256))
-        return HashChain(parent_id=None, sha256=rand_hash, is_root=True)
+        return HashChain(parent_id=None, sha256=rand_hash, depth=0, is_root=True)
 
     def make_child(self):
         """
@@ -97,7 +104,7 @@ class HashChain(db.Model):
         # Add the new child to our list. I'm not totally sure whether it should
         # be our responsibility to do this, or leave it up to the caller to
         # add it to their session.
-        child = HashChain(parent_id=self.id, sha256=sha256)
+        child = HashChain(parent_id=self.id, sha256=sha256, depth=self.depth+1)
         self.children.append(child)
         return child
 

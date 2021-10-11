@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block header %}
-<h1>{% block title %}Chain Letter{% endblock %}</h1>
+<h1>{% block title %}View{% endblock %}</h1>
 {% if parent != sha256 %}
 <a href="{{ url_for('chainlink.view', sha256=parent) }}">parent</a>
 {% endif %}
@@ -17,6 +17,12 @@
 
     <h4>Message</h4>
     <div style="white-space: pre">{{letter.message}}</div>
+
+    <h4>Ancestry</h4>
+    This is letter #{{letter.id}}.
+    {% if depth == 0 %}It is the root letter!
+    {% else %}It took {{depth}} hops from the root letter to get here.
+    {% endif %}
 
     <h4>Downstream Letters</h4>
     <div>

@@ -43,7 +43,7 @@ def view(sha256):
 
     # If the letter hasn't been written yet
     if hc.letter is None:
-        if g.user and g.user.sha256 == sha256:
+        if g.user == sha256:
             # If the user logged in under this hash, let them fill it
             return redirect(url_for("chainlink.fill", sha256=sha256))
         else:
@@ -53,8 +53,8 @@ def view(sha256):
     # If the user is logged in and this is their hash, exposed the full bit
     # depth of it and its neighbours.
     parent = hc.parent.shart256
-    if g.user and g.user.sha256.startswith(sha256):
-        sha256 = g.user.sha256 # fill out the whole hash
+    if g.user and g.user.startswith(sha256):
+        sha256 = g.user # fill out the whole hash
         children = [child.sha256 for child in hc.children]
     else:
         children = [child.shart256 for child in hc.children]
@@ -65,6 +65,7 @@ def view(sha256):
         children=children,
         sha256=sha256,
         letter=hc.letter,
+        depth=hc.depth,
     )
 
 

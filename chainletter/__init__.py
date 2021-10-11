@@ -1,6 +1,7 @@
 import os
 
 from flask import Flask
+from jinja2 import StrictUndefined
 
 
 def create_app(test_config=None):
@@ -15,6 +16,7 @@ def create_app(test_config=None):
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{database}",
         SQLALCHEMY_TRACK_MODIFICATIONS = False,
     )
+    app.jinja_env.undefined = StrictUndefined
 
     if test_config is None:
         # load the instance config, if it exists, when not testing

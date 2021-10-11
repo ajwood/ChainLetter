@@ -10,6 +10,7 @@ from flask import (
     jsonify,
 )
 from sqlalchemy import exc
+from sqlalchemy.sql.functions import func
 from sqlalchemy.sql.selectable import HasSuffixes
 from werkzeug.exceptions import abort
 
@@ -24,7 +25,10 @@ bp = Blueprint("chainlink", __name__)
 
 @bp.route("/")
 def index():
-    return render_template("chainlink/index.html")
+    return render_template(
+        "chainlink/index.html",
+        n_links=Letter.query.count(),
+    )
 
 
 @bp.route("/view/<sha256>")
@@ -52,12 +56,14 @@ def view(sha256):
 
     # If the user is logged in and this is their hash, exposed the full bit
     # depth of it and its neighbours.
-    parent = hc.parent.shart256
     if g.user and g.user.startswith(sha256):
-        sha256 = g.user # fill out the whole hash
-        children = [child.sha256 for child in hc.children]
+        sha256 = g.user  # fill out the whole hash
+        gethash = lambda x: x.sha256
     else:
-        children = [child.shart256 for child in hc.children]
+        gethash = lambda x: x.shart256
+
+    parent = hc.parent.shart256
+    children = [(child.letter is not None, gethash(child)) for child in hc.children]
 
     return render_template(
         "chainlink/view.html",
@@ -78,7 +84,11 @@ def fill(sha256):
     # Starting values for the page's inputs. This is mainly used for error
     # handling, if a submission goes bad, the user doesn't lose their entered
     # text (there is probably a better way to achieve this)
-    input_vals = {}
+    input_vals = dict(
+        username="",
+        home="",
+        message="",
+    )
 
     if l is not None:
         # If the letter already exists, redirect to its view page
@@ -91,7 +101,9 @@ def fill(sha256):
         if not request.form["veteran-hash"]:
             v_id = None
         else:
-            v = HashChain.query.filter_by(sha256=request.form["veteran-hash"]).one_or_none()
+            v = HashChain.query.filter_by(
+                sha256=request.form["veteran-hash"]
+            ).one_or_none()
             if v is None:
                 error = "Your veteran hash could not be found in the system!"
             else:
@@ -116,7 +128,10 @@ def fill(sha256):
 
             return redirect(url_for("chainlink.view", sha256=sha256))
 
-    return render_template("chainlink/fill.html", letter=hc.letter, **input_vals)
+    return render_template(
+        "chainlink/fill.html", sha256=sha256, letter=hc.letter, **input_vals
+    )
+
 
 @bp.route("/api/make_child/<sha256>", methods=["POST"])
 def api_make_child(sha256):
@@ -128,4 +143,4 @@ def api_make_child(sha256):
     else:
         newhash = hc.make_child().sha256
         db.session.commit()
-        return f"<li><a href='/view/{newhash}'>{newhash}</a></li>"
+        return f"<li>&#x274C; <a href='/view/{newhash}'>{newhash}</a></li>"

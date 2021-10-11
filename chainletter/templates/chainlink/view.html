@@ -41,8 +41,9 @@
 
     {% endif %}
     <ul id="ul-children" , style="list-style-type: none; padding: 0; font-family: monospace;">
-        {% for child in children %}
+        {% for filled, child in children %}
         <li>
+            {% if filled %}&#x2705;{% else %}&#x274C;{% endif %}
             <a href="{{ url_for('chainlink.view', sha256=child) }}">
                 {{child}}
             </a>

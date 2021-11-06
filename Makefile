@@ -7,10 +7,10 @@ clean:
 	rm -f instance/chainletter.sqlite
 
 init: clean
-	FLASK_APP=chainletter FLASK_ENV=development flask admin init-db
+	flask admin init-db
 
 run:
-	sqlite3 -init /dev/null instance/chainletter.sqlite 'select sha256 from hashchain'
+	sqlite3 -init - -column -header instance/chainletter.sqlite 'select sha256,depth from hashchain'
 	flask run
 
 clean-run: init run

@@ -1,17 +1,15 @@
-# Welcome to MkDocs
+# Welcome to Chainletter
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+A web implementation of old chain letters.
 
-## Commands
+## Running the Site
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+* `make init` - Initialize the database.
+* `make run` - Start the dev server.
+* `make clean-run` - Wipe and reinitialize, then run the dev server.
 
-## Project layout
+## First Steps
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+Before the dev server starts, it prints the hashes currently in the system. You
+should login with the root hash (the one at depth=0) and creating an initial
+entry.
